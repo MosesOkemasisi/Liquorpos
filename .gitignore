@@ -1,0 +1,12 @@
+# secrets and local data: never upload these
+.env
+db.sqlite3
+media/
+
+# generated or machine-specific
+.venv/
+__pycache__/
+*.pyc
+staticfiles/
+.idea/
+.vscode/

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{% if product %}{{ product.display_name }}{% else %}New product{% endif %}{% endblock %}
+{% block content %}
+<p><a href="{% url 'product_list' %}">← Inventory</a></p>
+<h1>{% if product %}{{ product.display_name }}{% else %}New product{% endif %}</h1>
+
+<div class="grid cols-2">
+  <form method="post" class="card" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% if product and product.picture %}<img class="form-photo" src="{{ product.picture }}" alt="{{ product.display_name }}">{% endif %}
+    {% for field in form %}
+      {% if field.field.widget.input_type == "checkbox" %}
+        <div class="field"><label class="check">{{ field }} <span>{{ field.label }}</span></label>
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}{{ field.errors }}</div>
+      {% else %}
+        <div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}{{ field.errors }}</div>
+      {% endif %}
+    {% endfor %}
+    <button class="primary">Save product</button>
+  </form>
+
+  {% if product %}
+  <div>
+    <div class="card">
+      <h2>Stock: {{ product.stock_qty }}</h2>
+      <p class="muted">Re-order level {{ product.reorder_level }}. Every change is recorded below.</p>
+      <form method="post" action="{% url 'stock_adjust' product.pk %}">
+        {% csrf_token %}
+        {% for field in adjust_form %}
+          <div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+            {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}</div>
+        {% endfor %}
+        <button class="primary">Adjust stock</button>
+      </form>
+    </div>
+
+    <div class="card table-wrap">
+      <h2>Recent movements</h2>
+      <table>
+        {% for m in movements %}
+        <tr><td>{{ m.created_at|date:"d M H:i" }}</td><td>{{ m.get_reason_display }}{% if m.reference %} · {{ m.reference }}{% endif %}
+          <div class="muted">{{ m.user.get_username|default:"" }} {{ m.note }}</div></td>
+          <td class="num"><strong>{{ m.change|stringformat:"+d" }}</strong></td></tr>
+        {% empty %}<tr><td class="muted">No movements yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

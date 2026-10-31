@@ -1,0 +1,45 @@
+{% load humanize %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt {{ sale.receipt_no }}</title>
+  {% load static %}<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="receipt-page">
+<div class="receipt">
+  <h1>{{ STORE.name }}</h1>
+  <div class="c">{{ STORE.address }}{% if STORE.phone %}<br>Tel {{ STORE.phone }}{% endif %}
+    {% if STORE.kra_pin %}<br>PIN {{ STORE.kra_pin }}{% endif %}
+    {% if STORE.licence %}<br>Licence {{ STORE.licence }}{% endif %}</div>
+  <hr>
+  <div>Receipt: {{ sale.receipt_no }}<br>
+    Date: {{ sale.paid_at|default:sale.created_at|date:"d M Y H:i" }}<br>
+    {% if sale.cashier %}Served by: {{ sale.cashier.get_username }}<br>{% endif %}
+    {% if sale.channel == "online" %}Online order · {{ sale.get_fulfilment_display }}<br>{% endif %}</div>
+  <hr>
+  <table>
+    {% for i in sale.items.all %}
+    <tr><td colspan="2">{{ i.name }}</td></tr>
+    <tr><td>{{ i.quantity }} x {{ i.unit_price|floatformat:0|intcomma }}</td><td class="r">{{ i.line_total|floatformat:0|intcomma }}</td></tr>
+    {% endfor %}
+  </table>
+  <hr>
+  <table>
+    <tr><td><strong>TOTAL</strong></td><td class="r"><strong>KES {{ sale.total|floatformat:0|intcomma }}</strong></td></tr>
+    {% for p in sale.payments.all %}{% if p.status == "success" %}
+      <tr><td>{{ p.get_method_display }}{% if p.mpesa_receipt %} {{ p.mpesa_receipt }}{% endif %}</td><td class="r">{{ p.amount|floatformat:0|intcomma }}</td></tr>
+      {% if p.change %}<tr><td>Tendered {{ p.tendered|floatformat:0|intcomma }}</td><td class="r">Change {{ p.change|floatformat:0|intcomma }}</td></tr>{% endif %}
+    {% endif %}{% endfor %}
+  </table>
+  {% if sale.status != "paid" %}<hr><div class="c"><strong>{{ sale.get_status_display|upper }}</strong></div>{% endif %}
+  <hr>
+  <div class="c">Thank you! Please drink responsibly.<br>Not for sale to persons under 18.</div>
+</div>
+<div class="receipt-actions">
+  <button onclick="window.print()">Print</button>
+  <a class="btn" href="javascript:window.close()">Close</a>
+</div>
+{% if auto_print %}<script>window.addEventListener("load", () => window.print());</script>{% endif %}
+</body>
+</html>

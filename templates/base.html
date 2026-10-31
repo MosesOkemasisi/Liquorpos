@@ -1,0 +1,91 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · {{ STORE.name }}</title>
+  <script src="{% static 'js/theme.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+</head>
+<body class="staff">
+<div class="app-shell">
+
+  {% if user.is_authenticated %}
+  <aside class="sidebar" aria-label="Main menu">
+    <a class="brand" href="{% url 'staff_home' %}"><img class="brand-logo" src="{% static 'img/logo.svg' %}" alt=""><span class="brand-name">{{ STORE.name }}</span></a>
+    <nav class="side-nav">
+      {% with page=request.resolver_match.url_name %}
+      <div class="side-label">Sell</div>
+      <a href="{% url 'pos' %}" class="{% if page == 'pos' %}active{% endif %}">{% include "partials/icon.html" with name="cart" %}<span>POS</span></a>
+      <a href="{% url 'sale_list' %}" class="{% if page == 'sale_list' and not request.GET.open or page == 'sale_detail' %}active{% endif %}">{% include "partials/icon.html" with name="receipt" %}<span>Sales</span></a>
+      <a href="{% url 'sale_list' %}?channel=online&open=1" class="{% if page == 'sale_list' and request.GET.open %}active{% endif %}">{% include "partials/icon.html" with name="package" %}<span>Online orders</span>{% if pending_online %}<span class="badge">{{ pending_online }}</span>{% endif %}</a>
+
+      {% if user.is_manager %}
+      <div class="side-label">Manage</div>
+      <a href="{% url 'product_list' %}" class="{% if page == 'product_list' or page == 'product_create' or page == 'product_edit' %}active{% endif %}">{% include "partials/icon.html" with name="layers" %}<span>Inventory</span>{% if low_stock_count %}<span class="badge warn" title="Low stock items">{{ low_stock_count }}</span>{% endif %}</a>
+      <a href="{% url 'dashboard' %}" class="{% if page == 'dashboard' %}active{% endif %}">{% include "partials/icon.html" with name="chart" %}<span>Reports</span></a>
+      {% endif %}
+
+      <div class="side-label">More</div>
+      {% if user.is_superuser %}<a href="{% url 'admin:index' %}">{% include "partials/icon.html" with name="shield" %}<span>Admin</span></a>{% endif %}
+      <a href="{% url 'shop:home' %}" target="_blank" rel="noopener">{% include "partials/icon.html" with name="bag" %}<span>View shop</span></a>
+      {% endwith %}
+    </nav>
+  </aside>
+  {% endif %}
+
+  <div class="app-main">
+    <header class="topbar">
+      {% if user.is_authenticated %}
+      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Open menu">{% include "partials/icon.html" with name="menu" %}</button>
+      <span class="topbar-title">{{ STORE.name }}</span>
+      <div class="topbar-right">
+        <button type="button" class="icon-btn" data-theme-toggle><span class="theme-icon">🌙</span></button>
+        <details class="profile-menu">
+          <summary aria-label="Account menu">
+            {% include "partials/avatar.html" with u=user size="sm" %}
+            <span class="who">{{ user.first_name|default:user.get_username }}</span>
+            <span class="caret">▾</span>
+          </summary>
+          <div class="menu">
+            <div class="menu-head">
+              {% include "partials/avatar.html" with u=user size="md" %}
+              <div>
+                <strong>{{ user.get_full_name|default:user.get_username }}</strong>
+                <div class="muted">{{ user.get_role_display }} · @{{ user.get_username }}</div>
+              </div>
+            </div>
+            <a href="{% url 'profile' %}">👤 My profile &amp; photo</a>
+            <a href="{% url 'password_change' %}">🔑 Change password</a>
+            <button type="button" class="menu-item" data-theme-toggle><span class="theme-icon">🌙</span> <span class="theme-name">Switch theme</span></button>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="menu-item logout-btn">⎋ Log out</button>
+            </form>
+          </div>
+        </details>
+      </div>
+      {% else %}
+      <a class="brand" href="{% url 'staff_home' %}"><img class="brand-logo" src="{% static 'img/logo.svg' %}" alt=""><span class="brand-name">{{ STORE.name }}</span></a>
+      <div class="topbar-right">
+        <button type="button" class="icon-btn" data-theme-toggle><span class="theme-icon">🌙</span></button>
+      </div>
+      {% endif %}
+    </header>
+
+    {% if messages %}
+    <ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <main class="{% block mainclass %}container{% endblock %}">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% if user.is_authenticated %}<div class="nav-backdrop" data-nav-toggle></div>{% endif %}
+<script src="{% static 'js/nav.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

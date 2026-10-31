@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Sales{% endblock %}
+{% block content %}
+<h1>{% if open %}Online orders to hand over{% else %}Sales{% endif %}</h1>
+{% if not user.is_manager %}<p class="muted">Showing your sales and all online orders from today, plus paid online orders still waiting to be handed over.</p>{% endif %}
+
+<form class="filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Receipt, name or phone">
+  <input type="date" name="date" value="{{ date }}">
+  <select name="channel">
+    <option value="">All channels</option>
+    <option value="pos" {% if channel == "pos" %}selected{% endif %}>In store</option>
+    <option value="online" {% if channel == "online" %}selected{% endif %}>Online</option>
+  </select>
+  <select name="status">
+    <option value="">Any status</option>
+    {% for value, label in statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  {% if open %}<input type="hidden" name="open" value="1">{% endif %}
+  <button class="primary shrink">Filter</button>
+</form>
+
+<div class="card table-wrap">
+<table>
+  <thead><tr><th>Receipt</th><th>When</th><th>Channel</th><th>Customer / cashier</th><th>Status</th><th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for s in page %}
+    <tr>
+      <td><a href="{% url 'sale_detail' s.pk %}">{{ s.receipt_no }}</a>{% if s.needs_review %} <span class="pill failed">review</span>{% endif %}</td>
+      <td>{{ s.created_at|date:"d M H:i" }}</td>
+      <td>{{ s.get_channel_display }}{% if s.channel == "online" %} · {{ s.get_fulfilment_display }}{% endif %}</td>
+      <td>{% if s.customer_name %}<strong>{{ s.customer_name }}</strong><br>{% endif %}{{ s.customer_phone }}{% if s.delivery_address %}<div class="muted">{{ s.delivery_address|truncatechars:50 }}</div>{% endif %}{% if s.cashier %}<span class="muted"> {{ s.cashier.get_username }}</span>{% endif %}</td>
+      <td><span class="pill {{ s.status }}">{{ s.get_status_display }}</span></td>
+      <td class="num">KES {{ s.total|floatformat:0|intcomma }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="muted">No sales found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ q }}&channel={{ channel }}&status={{ status }}&date={{ date }}&open={{ open }}">← Newer</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ q }}&channel={{ channel }}&status={{ status }}&date={{ date }}&open={{ open }}">Older →</a>{% endif %}
+</div>
+{% endblock %}

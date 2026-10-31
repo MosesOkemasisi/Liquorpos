@@ -1,0 +1,30 @@
+{% extends "shop/base.html" %}
+{% load humanize %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<h1>Checkout</h1>
+<div class="grid cols-2">
+  <form method="post" class="card">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="field"><label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>{{ form.name }}{{ form.name.errors }}</div>
+    <div class="field"><label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>{{ form.phone }}
+      <div class="help">{{ form.phone.help_text }}</div>{{ form.phone.errors }}</div>
+    <div class="field"><label>How would you like to get your order?</label>
+      {% for radio in form.fulfilment %}<label class="check">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>{% endfor %}
+      {{ form.fulfilment.errors }}</div>
+    <div class="field"><label for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>{{ form.address }}
+      <div class="help">Delivery fees, if any, are confirmed by phone.</div>{{ form.address.errors }}</div>
+    <div class="field"><label class="check">{{ form.age_confirmed }} <span>{{ form.age_confirmed.label }}</span></label>{{ form.age_confirmed.errors }}</div>
+    <button class="primary big">Pay KES {{ total|floatformat:0|intcomma }} with M-Pesa</button>
+  </form>
+
+  <div class="card table-wrap">
+    <h2>Order summary</h2>
+    <table>
+      {% for l in lines %}<tr><td>{{ l.qty }} × {{ l.product.display_name }}</td><td class="num">{{ l.total|floatformat:0|intcomma }}</td></tr>{% endfor %}
+      <tr><th>Total</th><td class="num"><strong>KES {{ total|floatformat:0|intcomma }}</strong></td></tr>
+    </table>
+  </div>
+</div>
+{% endblock %}

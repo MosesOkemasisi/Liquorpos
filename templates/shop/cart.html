@@ -1,0 +1,30 @@
+{% extends "shop/base.html" %}
+{% load humanize %}
+{% block title %}Your cart{% endblock %}
+{% block content %}
+<h1>Your cart</h1>
+{% if lines %}
+<form method="post" action="{% url 'shop:cart_update' %}" class="card table-wrap">
+  {% csrf_token %}
+  <table>
+    <thead><tr><th>Item</th><th class="num">Price</th><th>Qty</th><th class="num">Total</th></tr></thead>
+    {% for l in lines %}
+    <tr>
+      <td><span class="thumb-sm">{% if l.product.picture %}<img src="{{ l.product.picture }}" alt="" loading="lazy">{% endif %}</span>{{ l.product.display_name }}</td>
+      <td class="num">{{ l.product.selling_price|floatformat:0|intcomma }}</td>
+      <td style="width:90px"><input type="number" name="qty_{{ l.product.pk }}" value="{{ l.qty }}" min="0" max="{{ l.product.stock_qty }}"></td>
+      <td class="num">{{ l.total|floatformat:0|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    <tr><th colspan="3" class="num">Total</th><td class="num"><strong>KES {{ total|floatformat:0|intcomma }}</strong></td></tr>
+  </table>
+  <p class="muted">Set a quantity to 0 to remove an item.</p>
+  <div class="row">
+    <button>Update cart</button>
+    <a class="btn primary" href="{% url 'shop:checkout' %}">Checkout →</a>
+  </div>
+</form>
+{% else %}
+<p class="muted">Your cart is empty. <a href="{% url 'shop:home' %}">Browse drinks</a></p>
+{% endif %}
+{% endblock %}

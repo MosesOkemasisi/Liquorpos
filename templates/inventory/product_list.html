@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<div class="row" style="align-items:center">
+  <h1>Inventory</h1>
+  <div class="shrink"><a class="btn primary" href="{% url 'product_create' %}">+ Add product</a></div>
+</div>
+
+<div class="grid cols-4" style="margin-bottom:1rem">
+  <div class="card stat"><div class="label">Stock at cost</div><div class="value">KES {{ value.cost|default:0|floatformat:0|intcomma }}</div></div>
+  <div class="card stat"><div class="label">Stock at retail</div><div class="value">KES {{ value.retail|default:0|floatformat:0|intcomma }}</div></div>
+</div>
+
+<form class="filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Search name, SKU or barcode">
+  <select name="category">
+    <option value="">All categories</option>
+    {% for c in categories %}<option value="{{ c.pk }}" {% if category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  <select name="status">
+    <option value="active" {% if status == "active" %}selected{% endif %}>Active</option>
+    <option value="low" {% if status == "low" %}selected{% endif %}>Low stock</option>
+    <option value="out" {% if status == "out" %}selected{% endif %}>Out of stock</option>
+    <option value="inactive" {% if status == "inactive" %}selected{% endif %}>Inactive</option>
+  </select>
+  <button class="primary shrink">Filter</button>
+</form>
+
+<div class="card table-wrap">
+<table>
+  <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th class="num">Cost</th><th class="num">Price</th><th class="num">Stock</th><th></th></tr></thead>
+  <tbody>
+  {% for p in page %}
+    <tr>
+      <td><span class="thumb-sm">{% if p.picture %}<img src="{{ p.picture }}" alt="" loading="lazy">{% endif %}</span>
+        <a href="{% url 'product_edit' p.pk %}">{{ p.display_name }}</a>{% if not p.sell_online %} <span class="muted">(not online)</span>{% endif %}</td>
+      <td>{{ p.sku }}</td>
+      <td>{{ p.category|default:"—" }}</td>
+      <td class="num">{{ p.buying_price|floatformat:0|intcomma }}</td>
+      <td class="num">{{ p.selling_price|floatformat:0|intcomma }}</td>
+      <td class="num">{{ p.stock_qty }} {% if p.stock_qty == 0 %}<span class="pill failed">out</span>{% elif p.is_low %}<span class="pill pending">low</span>{% endif %}</td>
+      <td><a class="btn small" href="{% url 'product_edit' p.pk %}">Edit / stock</a></td>
+    </tr>
+  {% empty %}<tr><td colspan="7" class="muted">No products match.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ q }}&category={{ category }}&status={{ status }}">← Previous</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ q }}&category={{ category }}&status={{ status }}">Next →</a>{% endif %}
+</div>
+{% endblock %}

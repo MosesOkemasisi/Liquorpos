@@ -1,0 +1,21 @@
+{% extends "shop/base.html" %}
+{% block title %}Age check{% endblock %}
+{% block content %}
+<div class="card age-box">
+  {% if denied %}
+    <h1>Sorry</h1>
+    <p class="muted">You must be {{ STORE.min_age }} or older to enter this shop.</p>
+  {% else %}
+    <h1>Are you {{ STORE.min_age }} or older?</h1>
+    <p class="muted">The sale of alcohol to persons under {{ STORE.min_age }} is prohibited by law in Kenya.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="row">
+        <button class="primary big" name="answer" value="yes">Yes, I am {{ STORE.min_age }}+</button>
+        <button class="big" name="answer" value="no">No</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

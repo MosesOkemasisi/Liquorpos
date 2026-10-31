@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}POS{% endblock %}
+{% block mainclass %}container wide{% endblock %}
+{% block content %}
+<div id="pos" data-csrf="{{ csrf_token }}" data-products-url="{% url 'api_products' %}" data-checkout-url="{% url 'api_checkout' %}">
+  <section>
+    <input id="search" type="search" placeholder="Search by name or SKU, or scan a barcode…" autocomplete="off">
+    <div id="grid" class="products"></div>
+  </section>
+
+  <aside class="card cart">
+    <h2>Current sale</h2>
+    <div id="lines"></div>
+    <div class="total-row"><span>Total</span><span id="total">KES 0</span></div>
+
+    <div class="methods">
+      <label><input type="radio" name="method" value="cash" checked><span>Cash</span></label>
+      <label><input type="radio" name="method" value="mpesa"><span>M-Pesa</span></label>
+      <label><input type="radio" name="method" value="split"><span>Split</span></label>
+    </div>
+
+    <div id="cash-box" class="field">
+      <label for="tendered">Cash received (KES)</label>
+      <div class="row">
+        <input id="tendered" type="number" min="0" inputmode="numeric">
+        <button type="button" id="exact" class="shrink">Exact</button>
+      </div>
+      <p id="change" class="muted"></p>
+    </div>
+
+    <div id="split-box" class="field" style="display:none">
+      <label for="cash_amount">Cash portion (KES) — the rest goes to M-Pesa</label>
+      <input id="cash_amount" type="number" min="0" inputmode="numeric">
+    </div>
+
+    <div id="mpesa-box" class="field" style="display:none">
+      <label for="phone">Customer's M-Pesa number</label>
+      <input id="phone" type="tel" inputmode="tel" placeholder="0712 345 678">
+    </div>
+
+    <label class="check field"><input id="age" type="checkbox"> <span>Buyer is 18 or older (ID checked if in doubt)</span></label>
+    <button id="charge" class="primary big" disabled>Charge</button>
+  </aside>
+</div>
+
+<div id="result" class="overlay"><div id="dialog" class="dialog"></div></div>
+<div id="toast" class="toast"></div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/pay.js' %}"></script>
+<script src="{% static 'js/pos.js' %}"></script>
+{% endblock %}

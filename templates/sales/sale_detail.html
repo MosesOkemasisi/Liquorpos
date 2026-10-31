@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ sale.receipt_no }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'sale_list' %}">← All sales</a></p>
+<h1>{{ sale.receipt_no }} <span class="pill {{ sale.status }}">{{ sale.get_status_display }}</span></h1>
+{% if sale.needs_review %}
+<div class="card" style="border-color:var(--red)"><strong>Needs review.</strong> {{ sale.notes|linebreaksbr }}</div>
+{% endif %}
+
+<div class="grid cols-2">
+  <div class="card">
+    <h2>Details</h2>
+    <p>
+      {{ sale.get_channel_display }} · created {{ sale.created_at|date:"d M Y H:i" }}<br>
+      {% if sale.paid_at %}Paid {{ sale.paid_at|date:"d M Y H:i" }}<br>{% endif %}
+      {% if sale.cashier %}Cashier: {{ sale.cashier.get_username }}<br>{% endif %}
+      {% if sale.customer_name %}Customer: {{ sale.customer_name }}<br>{% endif %}
+      {% if sale.customer_phone %}Phone: {{ sale.customer_phone }}<br>{% endif %}
+      {% if sale.channel == "online" %}Fulfilment: {{ sale.get_fulfilment_display }}{% if sale.delivery_address %} — {{ sale.delivery_address }}{% endif %}<br>{% endif %}
+      {% if sale.status == "voided" %}Voided by {{ sale.voided_by.get_username }}: {{ sale.void_reason }}{% endif %}
+    </p>
+    <div>
+      <a class="btn" target="_blank" href="{% url 'receipt' sale.public_id %}">Receipt</a>
+      {% if sale.channel == "online" and sale.status == "paid" and not sale.fulfilled %}
+      <form method="post" action="{% url 'sale_fulfil' sale.pk %}" style="display:inline">{% csrf_token %}
+        <button class="primary">Mark as handed over / delivered</button></form>
+      {% elif sale.fulfilled %}<span class="pill success">Handed over {{ sale.fulfilled_at|date:"d M H:i" }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Payments</h2>
+    <table>
+      {% for p in sale.payments.all %}
+      <tr>
+        <td>{{ p.get_method_display }}{% if p.phone %}<div class="muted">{{ p.phone }}</div>{% endif %}</td>
+        <td><span class="pill {{ p.status }}">{{ p.get_status_display }}</span>
+          {% if p.mpesa_receipt %}<div class="muted">{{ p.mpesa_receipt }}</div>{% endif %}
+          {% if p.status == "failed" and p.result_desc %}<div class="muted">{{ p.result_desc }}</div>{% endif %}</td>
+        <td class="num">KES {{ p.amount|floatformat:0|intcomma }}</td>
+      </tr>
+      {% empty %}<tr><td class="muted">No payments yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="card table-wrap">
+  <h2>Items</h2>
+  <table>
+    <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+    {% for i in sale.items.all %}
+    <tr><td>{{ i.name }}</td><td class="num">{{ i.quantity }}</td><td class="num">{{ i.unit_price|floatformat:0|intcomma }}</td><td class="num">{{ i.line_total|floatformat:0|intcomma }}</td></tr>
+    {% endfor %}
+    <tr><th colspan="3" class="num">Total</th><td class="num"><strong>KES {{ sale.total|floatformat:0|intcomma }}</strong></td></tr>
+    {% if user.is_manager %}<tr><th colspan="3" class="num">Profit</th><td class="num">KES {{ sale.profit|floatformat:0|intcomma }}</td></tr>{% endif %}
+  </table>
+</div>
+
+{% if user.is_manager and sale.status == "paid" %}
+<div class="card">
+  <h2>Void this sale</h2>
+  <p class="muted">Returns the items to stock and removes the sale from reports. Refund the customer separately (cash back, or M-Pesa reversal from the Safaricom portal).</p>
+  <form method="post" action="{% url 'sale_void' sale.pk %}" class="row">
+    {% csrf_token %}
+    <input name="reason" placeholder="Reason (required)" required>
+    <button class="danger shrink" onclick="return confirm('Void this sale?')">Void sale</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

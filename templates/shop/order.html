@@ -1,0 +1,80 @@
+{% extends "shop/base.html" %}
+{% load humanize static %}
+{% block title %}Order {{ sale.receipt_no }}{% endblock %}
+{% block content %}
+<div id="order" data-csrf="{{ csrf_token }}" data-status-url="{% url 'pay_status' sale.public_id %}"
+     data-retry-url="{% url 'pay_retry' sale.public_id %}" data-cancel-url="{% url 'pay_cancel' sale.public_id %}"
+     data-state="{{ sale.status }}" data-phone="{{ sale.customer_phone }}">
+
+  <h1>Order {{ sale.receipt_no }}</h1>
+
+  <div id="state" class="card" style="text-align:center">
+    {% if sale.status == "paid" %}
+      <div class="big" style="font-size:2.4rem">✅</div>
+      <h2>Payment received. Thank you{% if sale.customer_name %}, {{ sale.customer_name }}{% endif %}!</h2>
+      <p class="muted">
+        {% if sale.fulfilment == "delivery" %}We'll deliver to {{ sale.delivery_address }}. Keep your ID handy.
+        {% else %}Your order will be ready for pickup. Show this page or receipt number <strong>{{ sale.receipt_no }}</strong> with your ID.{% endif %}
+      </p>
+    {% elif sale.status == "pending" %}
+      <div class="spinner"></div>
+      <h2>Check your phone</h2>
+      <p class="muted">Enter your M-Pesa PIN on the prompt sent to {{ sale.customer_phone }}. This page updates automatically.</p>
+    {% else %}
+      <div style="font-size:2.4rem">⚠️</div>
+      <h2>This order is {{ sale.get_status_display|lower }}</h2>
+      <p class="muted">Nothing was charged for it. <a href="{% url 'shop:home' %}">Start a new order</a>.</p>
+    {% endif %}
+  </div>
+
+  <div id="retry-box" class="card" style="display:none">
+    <h2>Payment not completed</h2>
+    <p id="fail-msg" class="muted"></p>
+    <div class="field"><label for="retry-phone">M-Pesa number</label><input id="retry-phone" type="tel" value="{{ sale.customer_phone }}"></div>
+    <p id="retry-err" class="errorlist"></p>
+    <div class="row">
+      <button id="retry" class="primary">Send prompt again</button>
+      <button id="cancel" class="danger">Cancel order</button>
+    </div>
+  </div>
+
+  <div class="card table-wrap">
+    <h2>Items</h2>
+    <table>
+      {% for i in sale.items.all %}<tr><td>{{ i.quantity }} × {{ i.name }}</td><td class="num">{{ i.line_total|floatformat:0|intcomma }}</td></tr>{% endfor %}
+      <tr><th>Total</th><td class="num"><strong>KES {{ sale.total|floatformat:0|intcomma }}</strong></td></tr>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/pay.js' %}"></script>
+<script>
+(() => {
+  const root = document.getElementById("order");
+  if (root.dataset.state !== "pending") return;
+  const csrf = root.dataset.csrf;
+  const box = document.getElementById("retry-box");
+  const poll = () => window.Pay.poll(root.dataset.statusUrl, {
+    onPaid: () => location.reload(),
+    onFailed: (d) => {
+      if (d.sale_status && d.sale_status !== "pending") return location.reload();
+      document.getElementById("fail-msg").textContent = (d.payment && d.payment.desc) || "The payment was not approved.";
+      box.style.display = "block";
+    },
+  });
+  poll();
+  document.getElementById("retry").onclick = async () => {
+    const r = await window.Pay.post(root.dataset.retryUrl, { phone: document.getElementById("retry-phone").value }, csrf);
+    if (!r.ok) { document.getElementById("retry-err").textContent = r.data.error; return; }
+    box.style.display = "none";
+    document.getElementById("retry-err").textContent = "";
+    poll();
+  };
+  document.getElementById("cancel").onclick = async () => {
+    await window.Pay.post(root.dataset.cancelUrl, {}, csrf);
+    location.reload();
+  };
+})();
+</script>
+{% endblock %}

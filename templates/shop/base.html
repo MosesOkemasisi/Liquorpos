@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Shop{% endblock %} · {{ STORE.name }}</title>
+  <script src="{% static 'js/theme.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+</head>
+<body>
+<header class="shop-header">
+  <a class="brand" href="{% url 'shop:home' %}"><img class="brand-logo" src="{% static 'img/logo.svg' %}" alt=""><span class="brand-name">{{ STORE.name }}</span></a>
+  <span class="spacer"></span>
+  <button type="button" class="icon-btn" data-theme-toggle><span class="theme-icon">🌙</span></button>
+    <a class="btn cart-btn" href="{% url 'shop:cart' %}" aria-label="Cart" title="Cart">{% include "partials/icon.html" with name="cart" %}{% if cart_count %}<span class="badge">{{ cart_count }}</span>{% endif %}</a>
+</header>
+{% if messages %}
+<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
+{% endif %}
+<main class="container">
+  {% block content %}{% endblock %}
+  <p class="notice">
+    You must be {{ STORE.min_age }} or older to buy alcohol. Please drink responsibly.
+    {% if STORE.licence %}Licence no. {{ STORE.licence }}.{% endif %}
+    {{ STORE.address }} {% if STORE.phone %}· {{ STORE.phone }}{% endif %}
+    
+  </p>
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

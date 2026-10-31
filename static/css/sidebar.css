@@ -1,0 +1,32 @@
+/* ================= Left sidebar menu ================= */
+.app-shell { display: flex; min-height: 100vh; }
+.app-main { flex: 1; min-width: 0; }
+
+.sidebar { width: 236px; flex: none; align-self: flex-start; position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 1rem .75rem; z-index: 30; }
+.sidebar .brand { display: flex; padding: .3rem .5rem 1rem; font-size: 1.1rem; }
+.side-nav { display: flex; flex-direction: column; gap: .2rem; }
+.side-label { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: .9rem .8rem .3rem; }
+
+.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+
+.side-nav a { display: flex; align-items: center; gap: .75rem; padding: .65rem .8rem; border-radius: 10px; color: var(--muted); font-weight: 500; transition: background .15s, color .15s, transform .15s; }
+.side-nav a .badge { margin-left: auto; }
+/* Hover: soft background, brighter text, icon grows a little, row nudges right */
+.side-nav a:hover { background: var(--panel-2); color: var(--text); text-decoration: none; transform: translateX(3px); }
+.side-nav a:hover .ico { transform: scale(1.12); }
+/* Active page: tinted background, amber text, amber bar on the left edge */
+.side-nav a.active { background: var(--panel-2); background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--amber); font-weight: 700; box-shadow: inset 3px 0 0 var(--amber); }
+.side-nav a.active:hover { transform: none; }
+
+.nav-toggle, .topbar-title { display: none; }
+.nav-backdrop { display: none; }
+
+/* Phones and small tablets: the sidebar slides in from the left when the menu button is tapped */
+@media (max-width: 900px) {
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-105%); transition: transform .2s ease; box-shadow: var(--shadow); }
+  body.nav-open .sidebar { transform: none; }
+  .nav-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 25; }
+  body.nav-open .nav-backdrop { display: block; }
+  .nav-toggle { display: inline-flex; }
+  .topbar-title { display: block; font-weight: 700; color: var(--amber); }
+}

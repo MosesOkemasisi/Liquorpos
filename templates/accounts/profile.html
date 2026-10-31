@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+<h1>My profile</h1>
+
+<div class="grid cols-2">
+  <form method="post" enctype="multipart/form-data" class="card">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="profile-photo">
+      {% include "partials/avatar.html" with u=user size="lg" %}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.avatar.id_for_label }}">{{ form.avatar.label }}</label>
+      {{ form.avatar }}
+      <div class="help">{{ form.avatar.help_text }}</div>
+      {{ form.avatar.errors }}
+    </div>
+    <div class="row">
+      <div class="field"><label for="{{ form.first_name.id_for_label }}">First name</label>{{ form.first_name }}{{ form.first_name.errors }}</div>
+      <div class="field"><label for="{{ form.last_name.id_for_label }}">Last name</label>{{ form.last_name }}{{ form.last_name.errors }}</div>
+    </div>
+    <div class="field"><label for="{{ form.phone.id_for_label }}">Phone</label>{{ form.phone }}{{ form.phone.errors }}</div>
+    <button class="primary">Save profile</button>
+  </form>
+
+  <div class="card">
+    <h2>Account</h2>
+    <p>
+      <span class="muted">Username</span><br><strong>{{ user.get_username }}</strong>
+    </p>
+    <p>
+      <span class="muted">Role</span><br><strong>{{ user.get_role_display }}</strong>
+    </p>
+    <p class="muted">Your username and role are set by the shop manager.</p>
+    <p><a class="btn" href="{% url 'password_change' %}">🔑 Change password</a></p>
+    <p>
+      <button type="button" data-theme-toggle><span class="theme-icon">🌙</span> <span class="theme-name">Switch theme</span></button>
+    </p>
+  </div>
+</div>
+{% endblock %}

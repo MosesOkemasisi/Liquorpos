@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+
+<div class="chips">
+  {% for label, s, e in presets %}<a class="chip {% if s == start and e == end %}active{% endif %}" href="?start={{ s|date:'Y-m-d' }}&end={{ e|date:'Y-m-d' }}">{{ label }}</a>{% endfor %}
+</div>
+<form class="filters" method="get">
+  <div><label>From</label><input type="date" name="start" value="{{ start|date:'Y-m-d' }}"></div>
+  <div><label>To</label><input type="date" name="end" value="{{ end|date:'Y-m-d' }}"></div>
+  <button class="primary shrink">Apply</button>
+  <a class="btn shrink" href="{% url 'export_csv' %}?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">Download CSV</a>
+</form>
+
+{% if needs_review %}
+<div class="card" style="border-color:var(--red)"><strong>{{ needs_review }} sale(s) need review</strong> — money was received but the sale could not complete. <a href="{% url 'admin:sales_sale_changelist' %}?needs_review__exact=1">Open them</a>.</div>
+{% endif %}
+
+<div class="grid cols-4">
+  <div class="card stat"><div class="label">Sales</div><div class="value">KES {{ revenue|floatformat:0|intcomma }}</div></div>
+  <div class="card stat"><div class="label">Gross profit</div><div class="value">KES {{ profit|floatformat:0|intcomma }}</div></div>
+  <div class="card stat"><div class="label">Transactions</div><div class="value">{{ count }}</div></div>
+  <div class="card stat"><div class="label">Average sale</div><div class="value">KES {{ average|floatformat:0|intcomma }}</div></div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card table-wrap">
+    <h2>Daily sales</h2>
+    <table>
+      {% for d in daily %}
+      <tr><td style="width:6.5rem">{{ d.day|date:"D d M" }}</td>
+        <td><div class="bar" style="width:{{ d.pct }}%"></div></td>
+        <td class="num">KES {{ d.total|floatformat:0|intcomma }}</td></tr>
+      {% empty %}<tr><td class="muted">No sales in this period.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card table-wrap">
+    <h2>Top products</h2>
+    <table>
+      <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Revenue</th></tr></thead>
+      {% for p in top_products %}
+      <tr><td>{{ p.name }}</td><td class="num">{{ p.qty }}</td><td class="num">{{ p.revenue|floatformat:0|intcomma }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="muted">Nothing sold.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card table-wrap">
+    <h2>Payment methods</h2>
+    <table>
+      {% for m in by_method %}<tr><td>{% if m.method == "mpesa" %}M-Pesa{% else %}Cash{% endif %}</td><td class="num">KES {{ m.total|floatformat:0|intcomma }}</td></tr>
+      {% empty %}<tr><td class="muted">—</td></tr>{% endfor %}
+    </table>
+    <h2 style="margin-top:1rem">By channel</h2>
+    <table>
+      {% for c in by_channel %}<tr><td>{% if c.channel == "online" %}Online{% else %}In store{% endif %} ({{ c.n }})</td><td class="num">KES {{ c.total|floatformat:0|intcomma }}</td></tr>
+      {% empty %}<tr><td class="muted">—</td></tr>{% endfor %}
+    </table>
+    <h2 style="margin-top:1rem">By cashier</h2>
+    <table>
+      {% for c in by_cashier %}<tr><td>{{ c.cashier__username|default:"Online orders" }} ({{ c.n }})</td><td class="num">KES {{ c.total|floatformat:0|intcomma }}</td></tr>
+      {% empty %}<tr><td class="muted">—</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card table-wrap">
+    <h2>Low stock</h2>
+    <table>
+      {% for p in low_stock %}<tr><td><a href="{% url 'product_edit' p.pk %}">{{ p.display_name }}</a></td><td class="num">{{ p.stock_qty }} left</td></tr>
+      {% empty %}<tr><td class="muted">Everything is above its re-order level.</td></tr>{% endfor %}
+    </table>
+    <p class="muted" style="margin-top:.75rem">Stock value: KES {{ stock.cost|default:0|floatformat:0|intcomma }} at cost · KES {{ stock.retail|default:0|floatformat:0|intcomma }} at retail</p>
+  </div>
+</div>
+{% endblock %}

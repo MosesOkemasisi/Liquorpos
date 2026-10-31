@@ -1,0 +1,48 @@
+{% extends "shop/base.html" %}
+{% load humanize %}
+{% block title %}Shop{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Order online. Pay with M-Pesa.</h1>
+  <p>Pick your drinks, enter your M-Pesa number and approve the prompt on your phone. Collect in store or ask for delivery.</p>
+</section>
+
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search drinks…">
+  {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+  <button class="primary shrink">Search</button>
+</form>
+
+<div class="chips">
+  <a class="chip {% if not category %}active{% endif %}" href="{% url 'shop:home' %}">All</a>
+  {% for c in categories %}<a class="chip {% if category == c.pk|stringformat:'s' %}active{% endif %}" href="?category={{ c.pk }}">{{ c.name }}</a>{% endfor %}
+</div>
+
+<div class="product-grid">
+  {% for p in page %}
+  <article class="card product-card">
+    <div class="thumb">{% if p.picture %}<img src="{{ p.picture }}" alt="{{ p.display_name }}" loading="lazy">{% else %}<span class="no-photo">No photo yet</span>{% endif %}</div>
+    <div class="body">
+      <strong>{{ p.display_name }}</strong>
+      {% if p.category %}<span class="muted">{{ p.category }}</span>{% endif %}
+      <span class="price">KES {{ p.selling_price|floatformat:0|intcomma }}</span>
+      {% if p.stock_qty <= 5 %}<span class="muted">Only {{ p.stock_qty }} left</span>{% endif %}
+      <form method="post" action="{% url 'shop:cart_add' %}">
+        {% csrf_token %}
+        <input type="hidden" name="product" value="{{ p.pk }}">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <input type="number" name="qty" value="1" min="1" max="{{ p.stock_qty }}" aria-label="Quantity">
+        <button class="primary">Add</button>
+      </form>
+    </div>
+  </article>
+  {% empty %}
+  <p class="muted">No drinks match your search.</p>
+  {% endfor %}
+</div>
+
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ q }}&category={{ category }}">← Previous</a>{% endif %}
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ q }}&category={{ category }}">Next →</a>{% endif %}
+</div>
+{% endblock %}
